@@ -1,14 +1,18 @@
 package com.springsecurity.com.springsecurity.service.impl;
 
+import java.util.Comparator;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.springsecurity.com.springsecurity.config.JwtUtil;
 import com.springsecurity.com.springsecurity.domain.SignUpRequest;
-import com.springsecurity.com.springsecurity.dto.UserDTO;
+import com.springsecurity.com.springsecurity.entity.Token;
 import com.springsecurity.com.springsecurity.entity.User;
 import com.springsecurity.com.springsecurity.repository.UserRepository;
 import com.springsecurity.com.springsecurity.service.AuthService;
+import com.springsecurity.com.springsecurity.service.TokenService;
 
 /**
  * 
@@ -18,19 +22,46 @@ import com.springsecurity.com.springsecurity.service.AuthService;
 @Service
 public class AuthServiceImpl implements AuthService
 {
+  @Autowired
+  private JwtUtil jwtUtil;
 
   @Autowired
   private UserRepository userRepository;
 
-  public UserDTO createUser(SignUpRequest signUpRequest)
+  @Autowired
+  private TokenService tokenService;
+
+  public User createUser(SignUpRequest signUpRequest)
   {
-    User user = new User(signUpRequest);
-    user.setName(signUpRequest.getName());
-    user.setEmail(signUpRequest.getEmail());
-    user.setPhone(signUpRequest.getPhone());
-    user.setPassword(new BCryptPasswordEncoder().encode(signUpRequest.getPassword()));
-    User createdUser = userRepository.save(user);
-    UserDTO userDTO = new UserDTO(createdUser);
-    return userDTO;
+    return userRepository.save(new User(signUpRequest));
+  }
+
+  @Override
+  public User fetchUser(String userEmail)
+  {
+    return userRepository.findByEmail(userEmail);
+  }
+
+  @Override
+  public String getToken(String userEmail)
+  {
+    User user = fetchUser(userEmail);
+    List<Token> tokens = tokenService.findByUser(user.getId()).stream()
+        .sorted(Comparator.comparing(Token::getExpirationTime).reversed()).toList();
+
+    for (Token token : tokens)
+    {
+      if (Boolean.FALSE.equals(jwtUtil.isTokenExpired(token.getToken())))
+        return token.getToken();
+      tokenService.deleteToken(token.getToken());
+    }
+
+    Token authToken = new Token();
+    authToken.setUser(user);
+    String jwt = jwtUtil.generateToken(userEmail, authToken);
+    authToken.setToken(jwt);
+    tokenService.saveToken(authToken);
+
+    return jwt;
   }
 }

@@ -1,7 +1,7 @@
 package com.springsecurity.com.springsecurity.service;
 
 import com.springsecurity.com.springsecurity.domain.SignUpRequest;
-import com.springsecurity.com.springsecurity.dto.UserDTO;
+import com.springsecurity.com.springsecurity.entity.User;
 
 /**
  * 
@@ -10,5 +10,9 @@ import com.springsecurity.com.springsecurity.dto.UserDTO;
  */
 public interface AuthService
 {
-  UserDTO createUser(SignUpRequest signupRequest);
+  User createUser(SignUpRequest signupRequest);
+  
+  User fetchUser(String userEmail);
+  
+  String getToken(String userEmail);
 }

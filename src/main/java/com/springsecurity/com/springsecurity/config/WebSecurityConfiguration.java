@@ -22,17 +22,18 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class WebSecurityConfiguration
 {
-
-  // @Autowired
-  // private JwtRequestFilter requestFilter;
-
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception
   {
-    return http.csrf().disable().authorizeHttpRequests().requestMatchers("/register", "/authenticate").permitAll().and()
-        .authorizeHttpRequests().requestMatchers("/api/**").authenticated().and().sessionManagement()
-        .sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-        // .addFilterBefore(requestFilter, UsernamePasswordAuthenticationFilter.class)
+    return http.csrf().disable()
+        .authorizeHttpRequests()
+        .requestMatchers("/register", "/authenticate", "/login", "/logout").permitAll()
+        .and()
+        .authorizeHttpRequests()
+        .requestMatchers("/api/**")
+        .authenticated().and().sessionManagement()
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .and()
         .build();
   }
 

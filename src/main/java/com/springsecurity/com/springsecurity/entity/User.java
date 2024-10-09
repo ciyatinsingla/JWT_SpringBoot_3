@@ -10,28 +10,28 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 
  * @author ratnendrr.girri
  *
  */
+@Data
 @Entity
 @Table(name = "users")
-@Data
+@NoArgsConstructor
 public class User
 {
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
   private String name;
   private String email;
   private String password;
   private String phone;
 
-  /**
-   * @param signUpRequest
-   */
   public User(SignUpRequest signUpRequest)
   {
     super();

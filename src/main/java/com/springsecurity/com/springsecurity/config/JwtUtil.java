@@ -1,16 +1,23 @@
 package com.springsecurity.com.springsecurity.config;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
-import io.jsonwebtoken.io.Decoders;
 import java.security.Key;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+
+import com.springsecurity.com.springsecurity.entity.Token;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
 /**
@@ -21,7 +28,10 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtil
 {
-  public static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
+  @Value("${jwt.token.expiry.minutes:60}")
+  private long tokenExpiryMinutes;
+
+  private static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
 
   public String extractUsername(String token)
   {
@@ -39,12 +49,7 @@ public class JwtUtil
     return claimsResolver.apply(claims);
   }
 
-  private Claims extractAllClaims(String token)
-  {
-    return Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token).getBody();
-  }
-
-  private Boolean isTokenExpired(String token)
+  public Boolean isTokenExpired(String token)
   {
     return extractExpiration(token).before(new Date());
   }
@@ -55,23 +60,48 @@ public class JwtUtil
     return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
   }
 
-  public String generateToken(String userName)
+  public String generateToken(String userName, Token token)
   {
     Map<String, Object> claims = new HashMap<>();
-    return createToken(claims, userName);
+    return createToken(claims, userName, token);
   }
 
-  private String createToken(Map<String, Object> claims, String userName)
+  private Claims extractAllClaims(String token)
   {
-    return Jwts.builder().setClaims(claims).setSubject(userName).setIssuedAt(new Date(System.currentTimeMillis()))
-        .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
-        .signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
+    return Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token).getBody();
   }
 
   private Key getSignKey()
   {
     byte[] keyBytes = Decoders.BASE64.decode(SECRET);
     return Keys.hmacShaKeyFor(keyBytes);
+  }
+
+  /**
+   * Creates a JWT token with the specified claims and user information.
+   *
+   * @param claims
+   *          a map of claims to be included in the token payload. These claims can contain additional information about
+   *          the user.
+   * @param userName
+   *          the userName of the user for whom the token is being created. This will be set as the subject of the
+   *          token.
+   * @param token
+   *          an instance of the Token class, which may contain expiration information. If provided, its expiration time
+   *          will be set based on the configured token expiry duration.
+   * @return a compact, URL-safe string representing the signed JWT token.
+   * 
+   * @throws IllegalArgumentException
+   *           if the claims or userName are null.
+   */
+  private String createToken(Map<String, Object> claims, String userName, Token token)
+  {
+    final LocalDateTime tokenExpiry = LocalDateTime.now().plusMinutes(tokenExpiryMinutes);
+    if (token != null)
+      token.setExpirationTime(LocalDateTime.now().plusMinutes(tokenExpiryMinutes));
+
+    return Jwts.builder().setClaims(claims).setSubject(userName).setIssuedAt(new Date(System.currentTimeMillis()))
+        .setExpiration(Timestamp.valueOf(tokenExpiry)).signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
   }
 
 }

@@ -13,5 +13,5 @@ import com.springsecurity.com.springsecurity.entity.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long>
 {
-  User findFirstByEmail(String email);
+  User findByEmail(String email);
 }

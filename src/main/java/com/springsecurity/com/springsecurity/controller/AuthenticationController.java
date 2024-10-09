@@ -1,6 +1,6 @@
 package com.springsecurity.com.springsecurity.controller;
 
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.springsecurity.com.springsecurity.config.JwtUtil;
 import com.springsecurity.com.springsecurity.domain.AuthenticationRequest;
 import com.springsecurity.com.springsecurity.domain.AuthenticationResponse;
+import com.springsecurity.com.springsecurity.service.AuthService;
 import com.springsecurity.com.springsecurity.service.impl.UserDetailsServiceImpl;
 
-import java.io.IOException;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * 
@@ -29,37 +29,32 @@ import java.io.IOException;
 public class AuthenticationController
 {
   @Autowired
-  private AuthenticationManager authenticationManager;
+  private AuthService authService;
 
   @Autowired
   private UserDetailsServiceImpl userDetailsService;
 
   @Autowired
-  private JwtUtil jwtUtil;
+  private AuthenticationManager authenticationManager;
 
   @PostMapping("/authenticate")
   public AuthenticationResponse createAuthenticationToken(@RequestBody AuthenticationRequest authenticationResquest,
       HttpServletResponse response)
       throws BadCredentialsException, DisabledException, UsernameNotFoundException, IOException
   {
+    String username = authenticationResquest.getEmail();
+    String password = authenticationResquest.getPassword();
     try
     {
-      authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authenticationResquest.getEmail(),
-          authenticationResquest.getPassword()));
+      authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
     }
-    catch (BadCredentialsException e)
+    catch (Exception e)
     {
       throw new BadCredentialsException("Incorrect username or password!");
     }
-    catch (DisabledException disabledException)
-    {
-      response.sendError(HttpServletResponse.SC_NOT_FOUND, "User is not activated");
-      return null;
-    }
 
     final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationResquest.getEmail());
-
-    final String token = jwtUtil.generateToken(userDetails.getUsername());
+    final String token = authService.getToken(userDetails.getUsername());
 
     return new AuthenticationResponse(token);
 
