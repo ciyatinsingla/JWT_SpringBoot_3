@@ -68,13 +68,12 @@ public class UserController
     }
     catch (BadCredentialsException e)
     {
-      throw new BadCredentialsException("Incorrect username or password!");
+      return new ResponseEntity<>("Incorrect username or password!", HttpStatus.UNAUTHORIZED);
     }
     catch (Exception e)
     {
-      return new ResponseEntity<>("Invalid username or password", HttpStatus.UNAUTHORIZED);
+      return new ResponseEntity<>("Issue occured will loging in.", HttpStatus.UNAUTHORIZED);
     }
-
     final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
     final String jwt = authService.getToken(userDetails.getUsername());
 
@@ -87,8 +86,8 @@ public class UserController
     Token authToken = tokenService.findByToken(token);
     if (authToken != null)
     {
-      SecurityContextHolder.getContext().setAuthentication(null);
       tokenService.deleteToken(authToken.getToken());
+      SecurityContextHolder.clearContext();
       return new ResponseEntity<>("Logged out successfully", HttpStatus.OK);
     }
     return new ResponseEntity<>("Token is invalid", HttpStatus.BAD_REQUEST);
