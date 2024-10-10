@@ -36,21 +36,18 @@ public class JwtRequestFilter extends OncePerRequestFilter
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException
   {
-    if (!request.getRequestURI().startsWith("/jwtsb3/login"))
+    String username = extractUsername(request);
+    if (username != null && SecurityContextHolder.getContext().getAuthentication() == null)
     {
-      String username = extractUsername(request);
-      if (username != null && SecurityContextHolder.getContext().getAuthentication() == null)
+      UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+      if (userDetails != null)
       {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        if (userDetails != null)
-        {
-          UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails,
-              null, userDetails.getAuthorities());
-          authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails,
+            null, userDetails.getAuthorities());
+        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-          // Set the authentication in the security context
-          SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-        }
+        // Set the authentication in the security context
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
       }
     }
     filterChain.doFilter(request, response);

@@ -12,6 +12,8 @@ import com.springsecurity.com.springsecurity.entity.Token;
 import com.springsecurity.com.springsecurity.repository.TokenRepository;
 import com.springsecurity.com.springsecurity.service.TokenService;
 
+import jakarta.transaction.Transactional;
+
 /**
  * @author ratnendrr.girri
  *
@@ -32,6 +34,7 @@ public class TokenServiceImpl implements TokenService
     return tokenRepository.findByToken(token);
   }
 
+  @Transactional
   public void deleteToken(String token)
   {
     tokenRepository.deleteByToken(token);
@@ -40,6 +43,13 @@ public class TokenServiceImpl implements TokenService
   public List<Token> findByUser(Long userId)
   {
     return tokenRepository.findByUserId(userId);
+  }
+
+  @Override
+  @Transactional
+  public void deleteAllTokens(List<String> tokens)
+  {
+    tokenRepository.deleteByTokenIn(tokens);
   }
 
 }

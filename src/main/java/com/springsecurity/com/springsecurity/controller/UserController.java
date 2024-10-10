@@ -6,8 +6,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -44,6 +46,9 @@ public class UserController
   @PostMapping("/register")
   public ResponseEntity<?> signupUser(@RequestBody SignUpRequest signupRequest)
   {
+    User existingUser = authService.fetchUser(signupRequest.getEmail());
+    if (existingUser != null)
+      return new ResponseEntity<>("User already exists", HttpStatus.BAD_REQUEST);
     User createdUser = authService.createUser(signupRequest);
     if (createdUser == null)
       return new ResponseEntity<>("User not created, try again!", HttpStatus.BAD_REQUEST);
@@ -52,7 +57,7 @@ public class UserController
     return new ResponseEntity<>(new AuthenticationResponse(jwt), HttpStatus.CREATED);
   }
 
-  @PostMapping("/login")
+  @PostMapping("/signin")
   public ResponseEntity<?> loginUser(@RequestBody AuthenticationRequest loginRequest)
   {
     String username = loginRequest.getEmail();
@@ -76,15 +81,17 @@ public class UserController
     return new ResponseEntity<>(new AuthenticationResponse(jwt), HttpStatus.OK);
   }
 
-  @PostMapping("/logout")
+  @GetMapping("/signout")
   public ResponseEntity<?> logout(@RequestHeader(value = "token") String token)
   {
     Token authToken = tokenService.findByToken(token);
-    if (authToken == null)
-      return new ResponseEntity<>("Token is invalid", HttpStatus.BAD_REQUEST);
-
-    tokenService.deleteToken(authToken.getToken());
-    return new ResponseEntity<>("Logged out successfully", HttpStatus.OK);
+    if (authToken != null)
+    {
+      SecurityContextHolder.getContext().setAuthentication(null);
+      tokenService.deleteToken(authToken.getToken());
+      return new ResponseEntity<>("Logged out successfully", HttpStatus.OK);
+    }
+    return new ResponseEntity<>("Token is invalid", HttpStatus.BAD_REQUEST);
   }
 
 }

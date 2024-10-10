@@ -98,7 +98,7 @@ public class JwtUtil
   {
     final LocalDateTime tokenExpiry = LocalDateTime.now().plusMinutes(tokenExpiryMinutes);
     if (token != null)
-      token.setExpirationTime(LocalDateTime.now().plusMinutes(tokenExpiryMinutes));
+      token.setExpirationTime(tokenExpiry);
 
     return Jwts.builder().setClaims(claims).setSubject(userName).setIssuedAt(new Date(System.currentTimeMillis()))
         .setExpiration(Timestamp.valueOf(tokenExpiry)).signWith(getSignKey(), SignatureAlgorithm.HS256).compact();

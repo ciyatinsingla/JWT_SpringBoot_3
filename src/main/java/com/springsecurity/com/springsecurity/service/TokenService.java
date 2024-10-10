@@ -19,5 +19,7 @@ public interface TokenService
 
   public void deleteToken(String token);
   
+  public void deleteAllTokens(List<String> token);
+  
   public List<Token> findByUser(Long userId);
 }
