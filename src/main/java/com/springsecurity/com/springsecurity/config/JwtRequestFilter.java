@@ -1,6 +1,3 @@
-/**
- * 
- */
 package com.springsecurity.com.springsecurity.config;
 
 import java.io.IOException;
